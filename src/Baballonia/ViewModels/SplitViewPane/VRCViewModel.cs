@@ -20,6 +20,9 @@ public partial class VrcViewModel : ViewModelBase
     [ObservableProperty] [property: SavedSetting("VRC_UseNativeTracking", false)]
     private bool _useNativeVrcEyeTracking;
 
+    [ObservableProperty] [property: SavedSetting("VRC_UseVRCFaceTracking", false)]
+    private bool _useVRCFaceTracking;
+
     [ObservableProperty] [property: SavedSetting("VRC_SelectedModuleMode", "Face")]
     private string? _selectedModuleMode = "Face";
 
