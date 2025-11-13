@@ -111,6 +111,7 @@ public class App : Application
             // Core Services
             services.AddTransient<IIdentityService, IdentityService>();
             services.AddTransient<IFileService, FileService>();
+            services.AddSingleton<VRCFaceTrackingService>();
             services.AddSingleton<IOscTarget, OscTarget>();
             services.AddSingleton<OscRecvService>();
             services.AddSingleton<OscSendService>();
@@ -119,7 +120,6 @@ public class App : Application
             services.AddTransient<GithubService>();
             services.AddTransient<ICommandSenderFactory, CommandSenderFactory>();
             services.AddTransient<FirmwareService>();
-            services.AddSingleton<IMainService, MainStandalone>();
             services.AddSingleton<ICalibrationService, CalibrationService>();
             services.AddSingleton<DropOverlayService>();
 
