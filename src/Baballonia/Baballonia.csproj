@@ -146,6 +146,7 @@
 	  <ProjectReference Include="..\Baballonia.FastCorruptionDetector\Baballonia.FastCorruptionDetector.csproj" />
 	  <ProjectReference Include="..\Baballonia.SDK\Baballonia.SDK.csproj" />
 	  <ProjectReference Include="..\HyperText.Avalonia\HyperText.Avalonia\HyperText.Avalonia.csproj" />
+	  <ProjectReference Include="..\VRCFaceTracking\VRCFaceTracking.Core\VRCFaceTracking.Core.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="eyeModel.onnx" />
