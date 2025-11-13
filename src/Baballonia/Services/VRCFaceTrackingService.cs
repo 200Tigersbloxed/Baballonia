@@ -36,7 +36,7 @@ public class VRCFaceTrackingService : BackgroundService
     private MainIntegrated _standalone;
     private List<ICustomFaceExpression> _customFaceExpressions = new();
 
-    public VRCFaceTrackingService(LocalSettingsService localSettingsService, DispatcherService dispatcherService)
+    public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService)
     {
         ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
         {

@@ -160,6 +160,7 @@ public class App : Application
 
             services.AddHostedService(provider => provider.GetService<OscRecvService>()!);
             services.AddHostedService(provider => provider.GetService<ParameterSenderService>()!);
+            services.AddHostedService(provider => provider.GetService<VRCFaceTrackingService>()!);
 
             // Configuration
             IConfiguration config = new ConfigurationBuilder()
