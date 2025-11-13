@@ -12,7 +12,11 @@ using VRC.OSCQuery;
 
 namespace Baballonia.Services;
 
-public class OscQueryServiceWrapper(ILogger<OscQueryServiceWrapper> logger, ILocalSettingsService localSettingsService)
+public class OscQueryService(
+    ILogger<OscQueryService> logger,
+    ILocalSettingsService localSettingsService,
+    VRCFaceTrackingService vrChatService
+    )
     : BackgroundService, IDisposable
 {
     private readonly HashSet<OSCQueryServiceProfile> _profiles = [];
@@ -44,7 +48,7 @@ public class OscQueryServiceWrapper(ILogger<OscQueryServiceWrapper> logger, ILoc
             .Build();
 
         logger.LogInformation(
-            $"[VRCFTReceiver] Started OSCQueryService {_serviceWrapper.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{_serviceWrapper.HostIP}:{tcpPort}");
+            $"Started OSCQueryService {_serviceWrapper.ServerName} at TCP {tcpPort}, UDP {udpPort}, HTTP http://{_serviceWrapper.HostIP}:{tcpPort}");
 
         _serviceWrapper.AddEndpoint<string>("/avatar/change", Attributes.AccessValues.ReadWrite, ["default"]);
         _serviceWrapper.OnOscQueryServiceAdded += AddProfileToList;
@@ -122,13 +126,11 @@ public class OscQueryServiceWrapper(ILogger<OscQueryServiceWrapper> logger, ILoc
         }
     }
 
-
     public override void Dispose()
     {
-        logger.LogInformation("OSCQuery teardown called");
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
+        _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
         _serviceWrapper.Dispose();
-        logger.LogInformation("OSCQuery teardown completed");
     }
 }
