@@ -36,9 +36,12 @@ public class VRCFaceTrackingService : BackgroundService
 
     private MainIntegrated _standalone;
     private List<ICustomFaceExpression> _customFaceExpressions = new();
+    private Contracts.ILocalSettingsService  _localSettingsService;
 
     public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService)
     {
+        _localSettingsService = localSettingsService;
+        if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return;
         ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
         {
             builder
@@ -67,6 +70,7 @@ public class VRCFaceTrackingService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return;
         await _standalone.InitializeAsync();
         UnifiedTracking.OnUnifiedDataUpdated += OnTrackingDataUpdated;
         while (!stoppingToken.IsCancellationRequested)

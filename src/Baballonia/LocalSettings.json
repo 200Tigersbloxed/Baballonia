@@ -1,5 +1,6 @@
 {
   "VRC_UseNativeTracking": false,
+  "VRC_UseVRCFaceTracking": false,
   "VRC_SelectedModuleMode": "Face",
   "SecondsWarningRead": false,
   "ShowOnboardingOnStartup": true,

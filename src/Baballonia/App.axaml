@@ -10,6 +10,7 @@
 
     <Application.Resources>
       <converters:BooleanOrConverter x:Key="BooleanOrConverter"/>
+      <converters:BooleanNegationConverter x:Key="BooleanNegationConverter"/>
     </Application.Resources>
 
     <Application.DataTemplates>

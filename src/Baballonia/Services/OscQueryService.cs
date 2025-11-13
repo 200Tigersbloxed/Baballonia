@@ -28,6 +28,7 @@ public class OscQueryService(
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return Task.CompletedTask;
         var ipString = localSettingsService.ReadSetting<string>("OSCAddress");
         var hostIp = IPAddress.Parse(ipString);
 
@@ -128,6 +129,7 @@ public class OscQueryService(
 
     public override void Dispose()
     {
+        if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return;
         _cancellationTokenSource.Cancel();
         _cancellationTokenSource.Dispose();
         _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
