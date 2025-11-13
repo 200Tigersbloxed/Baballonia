@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using VRCFaceTracking;
@@ -87,7 +88,7 @@ class VRCFaceTrackingModuleData : IModuleDataService
 
     public IEnumerable<InstallableTrackingModule> GetLegacyModules()
     {
-        string dir = Path.Combine(Utils.VrcftLibsDirectory);
+        string dir = Path.Combine(AppContext.BaseDirectory, "VRCFaceTracking");
         if (!Directory.Exists(dir)) // "Eat my ass windows" -dfgHiatus
             Directory.CreateDirectory(dir);
         string[] files = Directory.GetFiles(dir, "*.dll");

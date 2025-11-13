@@ -115,7 +115,7 @@ public class App : Application
             services.AddSingleton<IOscTarget, OscTarget>();
             services.AddSingleton<OscRecvService>();
             services.AddSingleton<OscSendService>();
-            services.AddTransient<OscQueryServiceWrapper>();
+            services.AddTransient<OscQueryService>();
             services.AddSingleton<ParameterSenderService>();
             services.AddTransient<GithubService>();
             services.AddTransient<ICommandSenderFactory, CommandSenderFactory>();
@@ -153,6 +153,7 @@ public class App : Application
             services.AddHostedService(provider => provider.GetService<OscRecvService>()!);
             services.AddHostedService(provider => provider.GetService<ParameterSenderService>()!);
             services.AddHostedService(provider => provider.GetService<VRCFaceTrackingService>()!);
+            services.AddHostedService(provider => provider.GetService<OscQueryService>()!);
 
             // Configuration
             IConfiguration config = new ConfigurationBuilder()

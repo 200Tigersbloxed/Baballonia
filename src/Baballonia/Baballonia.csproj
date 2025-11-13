@@ -28,6 +28,12 @@
         <None Update="Firmware\Binaries\babble_expremental_mutimodal_firmware_1.1.0.bin">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
+        <None Update="VRCFaceTracking\BabbleConfig.json">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+        <None Update="VRCFaceTracking\VRCFaceTracking.Baballonia.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
     </ItemGroup>
 
 
