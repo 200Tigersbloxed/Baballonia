@@ -70,7 +70,7 @@ public class VRCFaceTrackingService : BackgroundService
 
     internal async void PullParametersFromOSCAddress(string ip, int port)
     {
-        string url = $"http://{ip}:{port}/avatar/change";
+        string url = $"http://{ip}:{port}/";
         string jsonContent = await Client.GetStringAsync(url);
         OscAvatarParameters? root = JsonConvert.DeserializeObject<OscAvatarParameters>(jsonContent);
         if(root == null) return;
