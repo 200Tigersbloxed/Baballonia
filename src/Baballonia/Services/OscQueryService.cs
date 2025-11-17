@@ -116,6 +116,11 @@ public class OscQueryService(
             {
                 localSettingsService.SaveSetting("OSCOutPort", VrcPort);
             }
+
+            if (hostIp != vrcIp || hostPort != VrcPort)
+            {
+                vrChatService.PullParametersFromOSCAddress(vrcIp, VrcPort);
+            }
         }
         catch (InvalidOperationException)
         {

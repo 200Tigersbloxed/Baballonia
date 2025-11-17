@@ -2,18 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia;
+using Baballonia.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using VRCFaceTracking;
+using VRCFaceTracking.Core.Contracts;
 using VRCFaceTracking.Core.Contracts.Services;
 using VRCFaceTracking.Core.Library;
 using VRCFaceTracking.Core.Models;
-using VRCFaceTracking.Core.Models.ParameterDefinition.FileBased;
 using VRCFaceTracking.Core.OSC.DataTypes;
 using VRCFaceTracking.Core.Params;
 using VRCFaceTracking.Core.Params.Data;
@@ -37,6 +39,7 @@ public class VRCFaceTrackingService : BackgroundService
     private MainIntegrated _standalone;
     private List<ICustomFaceExpression> _customFaceExpressions = new();
     private Contracts.ILocalSettingsService  _localSettingsService;
+    private static readonly HttpClient Client = new();
 
     public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService)
     {
@@ -58,11 +61,20 @@ public class VRCFaceTrackingService : BackgroundService
     /// <summary>
     /// Updates all VRCFaceTracking Parameters to only include the parameters relative to your current avatar
     /// </summary>
-    /// <param name="avatarConfigFile">The config file for your Avatar</param>
-    public void OnNewAvatarLoaded(AvatarConfigFile avatarConfigFile)
+    /// <param name="parameters">The parameters your avatar contains</param>
+    public void OnNewAvatarLoaded(IParameterDefinition[] parameters)
     {
         _customFaceExpressions.RemoveAll(x => x.GetType() == VRCFTParameters.ParameterType);
-        _customFaceExpressions.AddRange(VRCFTParameters.UpdateParameters(avatarConfigFile));
+        _customFaceExpressions.AddRange(VRCFTParameters.UpdateParameters(parameters));
+    }
+
+    internal async void PullParametersFromOSCAddress(string ip, int port)
+    {
+        string url = $"http://{ip}:{port}/avatar/change";
+        string jsonContent = await Client.GetStringAsync(url);
+        OscAvatarParameters? root = JsonConvert.DeserializeObject<OscAvatarParameters>(jsonContent);
+        if(root == null) return;
+        OnNewAvatarLoaded(root.GetParameters().Select(x => (IParameterDefinition) x).ToArray());
     }
 
     private void OnTrackingDataUpdated(UnifiedTrackingData data) =>
@@ -445,7 +457,7 @@ internal static class VRCFTParameters
     public static bool UseBinary { get; set; } = true;
     public static Type ParameterType = typeof(VRCFTProgrammableExpression);
 
-    public static ICustomFaceExpression[] UpdateParameters(AvatarConfigFile avatarConfigSpec, ParameterVersion parameterVersion = ParameterVersion.Both)
+    public static ICustomFaceExpression[] UpdateParameters(IParameterDefinition[] parameters, ParameterVersion parameterVersion = ParameterVersion.Both)
     {
         Parameter[] parametersToPullFrom;
         switch (parameterVersion)
@@ -465,7 +477,7 @@ internal static class VRCFTParameters
         }
         List<Parameter> paramList = new List<Parameter>();
         foreach (Parameter parameter in parametersToPullFrom)
-            paramList.AddRange(parameter.ResetParam(avatarConfigSpec.Parameters));
+            paramList.AddRange(parameter.ResetParam(parameters));
         List<VRCFTProgrammableExpression> customFaceExpressions = GetParameters(paramList.ToArray());
         return customFaceExpressions.Select(x => (ICustomFaceExpression) x).ToArray();
     }
