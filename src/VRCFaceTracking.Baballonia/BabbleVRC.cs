@@ -1,5 +1,6 @@
 using System.Reflection;
 using Microsoft.Extensions.Logging;
+using VRCFaceTracking.Core.Params.Expressions;
 
 namespace VRCFaceTracking.Baballonia;
 
@@ -39,7 +40,7 @@ public class BabbleVrc : ExtTrackingModule
 
         ModuleInformation = new ModuleMetadata
         {
-            Name = "Project Babble Module v3.0.0",
+            Name = "Project Babble Module v3.1.0",
             StaticImages = list
         };
 
@@ -58,10 +59,24 @@ public class BabbleVrc : ExtTrackingModule
             UnifiedTracking.Data.Eye.Left.Gaze.x = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftX];
             UnifiedTracking.Data.Eye.Left.Gaze.y = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftY];
             UnifiedTracking.Data.Eye.Left.Openness = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftLid];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintLeft].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftSquint];
+
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideLeft].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftWiden];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererLeft].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeLeftLower];
 
             UnifiedTracking.Data.Eye.Right.Gaze.x = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightX];
             UnifiedTracking.Data.Eye.Right.Gaze.y = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightY];
             UnifiedTracking.Data.Eye.Right.Openness = BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightLid];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeSquintRight].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightSquint];
+
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.EyeWideRight].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightWiden];
+            UnifiedTracking.Data.Shapes[(int)UnifiedExpressions.BrowLowererRight].Weight =
+                BabbleOsc.EyeExpressions[(int)ExpressionMapping.EyeRightLower];
         }
 
         if (needsExpression)

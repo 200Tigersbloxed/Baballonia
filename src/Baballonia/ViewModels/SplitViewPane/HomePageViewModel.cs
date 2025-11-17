@@ -108,13 +108,24 @@ public partial class HomePageViewModel : ViewModelBase, IDisposable
 
         partial void OnDisplayAddressChanged(string value)
         {
+            // "it looks like shit" be damned, i've seen *way* too many instances of people needing to force
+            // a capture backend and this stupid visual preference garbage is getting in the way of it.
+            // we're going to get more support tickets from people who can't find this when they're on linux or
+            // using vive face trackers.
+            // if you think it looks bad, suck it, make it look better yourself, it has to be here,
+            // the NEED take precedent over visual preferences.
+            //var advancedEnabled = _localSettingsService.ReadSetting<bool>("AppSettings_AdvancedOptions");
+            var advancedEnabled = true;
             var availableCaptureFactories = _platformConnector.GetCaptureFactories()
                 .Where(factory => factory.CanConnect(value)).ToArray();
 
-            var shouldShow = availableCaptureFactories.Length >= 2;
+            var shouldShow = advancedEnabled && availableCaptureFactories.Length >= 2;
             CaptureMethodVisible = shouldShow;
 
             CaptureMethods.Clear();
+            // IF YOU'RE TRYING TO ENABLE A SPECIFIC BACKEND FOR A CAPTURE, DO NOT TOUCH THIS!
+            // THIS IS NOT WHERE YOU FORCE A BACKEND
+            // OVERRIDE THE CANCAPTURE() METHOD INSIDE THE CAPTURE'S CAPTURE FACTORY
             if (shouldShow)
             {
                 CaptureMethods.Add(Assets.Resources.Home_Backend_Default);
@@ -127,7 +138,6 @@ public partial class HomePageViewModel : ViewModelBase, IDisposable
             {
                 SelectedCaptureMethod = "";
             }
-
         }
 
         partial void OnSelectedCaptureMethodChanged(string value)
@@ -395,7 +405,7 @@ public partial class HomePageViewModel : ViewModelBase, IDisposable
     private readonly ILogger<HomePageViewModel> _logger;
     private readonly IPlatformConnector _platformConnector;
 
-    public string RequestedVRCalibration = CalibrationRoutine.Map["QuickCalibration"];
+    public CalibrationRoutine.Routines RequestedVRCalibration = CalibrationRoutine.Map["BasicCalibration"];
 
 
     public HomePageViewModel(FacePipelineManager facePipelineManager,
@@ -653,29 +663,30 @@ public partial class HomePageViewModel : ViewModelBase, IDisposable
     [RelayCommand]
     private async Task RequestVRCalibration()
     {
-        var res = await _vrOverlay.EyeTrackingCalibrationRequested(RequestedVRCalibration);
-        if (res.success)
-        {
-            if (!Directory.Exists(Utils.ModelsDirectory))
+        var res = await Task.Run(async () =>
             {
-                Directory.CreateDirectory(Utils.ModelsDirectory);
+                try
+                {
+                    return await _vrOverlay.EyeTrackingCalibrationRequested(RequestedVRCalibration);
+                }
+                catch (Exception ex)
+                {
+                    return (false, ex.Message);
+                }
             }
-
-            var destPath = Path.Combine(Utils.ModelsDirectory,
-                $"tuned_temporal_eye_tracking_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.onnx");
-            File.Move("tuned_temporal_eye_tracking.onnx", destPath);
-            _localSettings.SaveSetting("EyeHome_EyeModel", destPath);
-            await _eyePipelineManager.LoadInferenceAsync();
+        );
+        if (res.Item1)
+        {
             SelectedCalibrationTextBlock.Foreground = new SolidColorBrush(Colors.Green);
         }
         else
         {
             SelectedCalibrationTextBlock.Foreground = new SolidColorBrush(Colors.Red);
-            _logger.LogError(res.status);
+            _logger.LogError(res.Item2);
         }
 
         var previousText = SelectedCalibrationTextBlock.Text;
-        SelectedCalibrationTextBlock.Text = res.status;
+        SelectedCalibrationTextBlock.Text = res.Item2;
         await Task.Delay(5000);
         SelectedCalibrationTextBlock.Text = previousText;
         SelectedCalibrationTextBlock.Foreground = new SolidColorBrush(GetBaseHighColor());

@@ -13,7 +13,7 @@ namespace Baballonia;
 
 public static class Utils
 {
-    public const int EyeRawExpressions = 6;
+    public const int EyeRawExpressions = 12;
     public const int FaceRawExpressions = 45;
     public const int FramesForEyeInference = 4;
 
@@ -60,6 +60,10 @@ public static class Utils
 
     public static readonly string ModelsDirectory = IsSupportedDesktopOS
         ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProjectBabble", "Models")
+        : AppContext.BaseDirectory;
+
+    public static readonly string ModelDataDirectory = IsSupportedDesktopOS
+        ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProjectBabble", "ModelData")
         : AppContext.BaseDirectory;
 
     public static readonly string VrcftLibsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),

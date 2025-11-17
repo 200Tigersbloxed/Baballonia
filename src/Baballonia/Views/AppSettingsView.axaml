@@ -337,6 +337,12 @@
           IconPath="TopSpeedRegular"
           SettingToggled="{Binding UseGPU, Mode=TwoWay}" />
 
+      <controls:SettingsToggle
+          Title="{x:Static assets:Resources.Calibration_Eye_Expressions_Stabilize_Eyes_Header}"
+          Description="{x:Static assets:Resources.Calibration_Eye_Expressions_Stabilize_Eyes_Description}"
+          IconPath="EyeTrackingRegular"
+          SettingToggled="{Binding StabilizeEyes, Mode=TwoWay}" />
+
       <controls:SettingsBlock
         Title="{x:Static assets:Resources.Settings_LogLevel_Header}"
         Description="{x:Static assets:Resources.Settings_LogLevel_Description}"
@@ -362,6 +368,12 @@
                Description="{x:Static assets:Resources.Settings_SteamVR_Auto_Start_Description}"
                IconPath="PowerRegular"
                SettingToggled="{Binding SteamvrAutoStart, Mode=TwoWay}" />
+
+      <controls:SettingsToggle
+        Title="Advanced settings"
+        Description="Enable advanced settings"
+        IconPath="SettingsRegular"
+        SettingToggled="{Binding AdvancedOptions, Mode=TwoWay}" />
 
       <Border
           Padding="15,5,15,5"
