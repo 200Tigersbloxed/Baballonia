@@ -17,8 +17,7 @@ public partial class VrcViewModel : ViewModelBase
 {
     private ILocalSettingsService LocalSettingsService { get; }
 
-    [ObservableProperty]
-    [SavedSetting("VRC_UseNativeTracking", false)]
+    [ObservableProperty] [property: SavedSetting("VRC_UseNativeTracking", false)]
     private bool _useNativeVrcEyeTracking;
 
     [ObservableProperty] [property: SavedSetting("VRC_UseVRCFaceTracking", false)]

@@ -390,7 +390,8 @@ public class MainIntegrated
         MasterCancellationTokenSource.Cancel();
 
         _logger.LogDebug("Resetting our time end period...");
-        VRCFaceTracking.Core.Utils.TimeEndPeriod(1);
+        if (OperatingSystem.IsWindows())
+            VRCFaceTracking.Core.Utils.TimeEndPeriod(1);
 
         _logger.LogDebug("Teardown successful. Awaiting exit...");
     }
@@ -402,7 +403,8 @@ public class MainIntegrated
 
         // Begin main update loop
         _logger.LogDebug("Starting update loop...");
-        VRCFaceTracking.Core.Utils.TimeBeginPeriod(1);
+        if (OperatingSystem.IsWindows())
+            VRCFaceTracking.Core.Utils.TimeBeginPeriod(1);
         ThreadPool.QueueUserWorkItem(async ct =>
         {
             var token = (CancellationToken)ct;

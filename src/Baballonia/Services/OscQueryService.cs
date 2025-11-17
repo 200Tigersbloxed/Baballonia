@@ -24,12 +24,16 @@ public class OscQueryService(
 
     private static readonly Regex VrChatClientRegex = new(@"VRChat-Client-[A-Za-z0-9]{6}$", RegexOptions.Compiled);
     private CancellationTokenSource _cancellationTokenSource;
-    private const int VrcPort = 9000;
+    private string _startingIP = "127.0.0.1";
+    private int _startingPort = 8888;
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return Task.CompletedTask;
         var ipString = localSettingsService.ReadSetting<string>("OSCAddress");
+        _startingIP = ipString;
+        var port = localSettingsService.ReadSetting<int>("OSCOutPort");
+        _startingPort = port;
         var hostIp = IPAddress.Parse(ipString);
 
         _cancellationTokenSource = new CancellationTokenSource();
@@ -77,7 +81,7 @@ public class OscQueryService(
         {
             while (true)
             {
-                var useOscQuery = localSettingsService.ReadSetting<bool>("UseOSCQuery");
+                var useOscQuery = localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking");
                 if (useOscQuery)
                 {
                     try
@@ -112,14 +116,15 @@ public class OscQueryService(
             }
 
             var hostPort = localSettingsService.ReadSetting<int>("OSCOutPort");
-            if (hostPort != VrcPort)
+            var vrcPort = vrcProfile.port;
+            if (hostPort != vrcPort)
             {
-                localSettingsService.SaveSetting("OSCOutPort", VrcPort);
+                localSettingsService.SaveSetting("OSCOutPort", vrcPort);
             }
 
-            if (hostIp != vrcIp || hostPort != VrcPort)
+            if (hostIp != vrcIp || hostPort != vrcPort)
             {
-                vrChatService.PullParametersFromOSCAddress(vrcIp, VrcPort);
+                vrChatService.PullParametersFromOSCAddress(vrcIp, vrcPort);
             }
         }
         catch (InvalidOperationException)
@@ -134,10 +139,24 @@ public class OscQueryService(
 
     public override void Dispose()
     {
-        if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return;
-        _cancellationTokenSource.Cancel();
-        _cancellationTokenSource.Dispose();
-        _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
-        _serviceWrapper.Dispose();
+        if (localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking"))
+        {
+            // If we used VRCFaceTracking's OSCQuery navigation,
+            // Make sure to reset the original values
+            localSettingsService.SaveSetting("OSCAddress", _startingIP);
+            localSettingsService.SaveSetting("OSCOutPort", _startingPort);
+        }
+
+        if (_cancellationTokenSource != null)
+        {
+            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource.Dispose();
+        }
+
+        if (_serviceWrapper != null)
+        {
+            _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
+            _serviceWrapper.Dispose();
+        }
     }
 }
