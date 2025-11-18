@@ -23,15 +23,12 @@ public class OscQueryService(
     private OSCQueryService _serviceWrapper = null!;
 
     private static readonly Regex VrChatClientRegex = new(@"VRChat-Client-[A-Za-z0-9]{6}$", RegexOptions.Compiled);
-    private CancellationTokenSource _cancellationTokenSource;
-
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return Task.CompletedTask;
         var ipString = localSettingsService.ReadSetting<string>("OSCAddress");
         var hostIp = IPAddress.Parse(ipString);
 
-        _cancellationTokenSource = new CancellationTokenSource();
         var tcpPort = Extensions.GetAvailableTcpPort();
         var udpPort = Extensions.GetAvailableUdpPort();
 
@@ -140,12 +137,6 @@ public class OscQueryService(
             // Make sure to reset the original values
             localSettingsService.SaveSetting("OSCAddress", "127.0.0.1");
             localSettingsService.SaveSetting("OSCOutPort", 8888);
-        }
-
-        if (_cancellationTokenSource != null)
-        {
-            _cancellationTokenSource.Cancel();
-            _cancellationTokenSource.Dispose();
         }
 
         if (_serviceWrapper != null)
