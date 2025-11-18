@@ -8,12 +8,14 @@ using System.Threading.Tasks;
 using Baballonia.Contracts;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OscCore;
 using VRC.OSCQuery;
 
 namespace Baballonia.Services;
 
 public class OscQueryService(
     ILogger<OscQueryService> logger,
+    OscRecvService oscRecvService,
     ILocalSettingsService localSettingsService,
     VRCFaceTrackingService vrChatService
     )
@@ -21,20 +23,20 @@ public class OscQueryService(
 {
     private readonly HashSet<OSCQueryServiceProfile> _profiles = [];
     private OSCQueryService _serviceWrapper = null!;
+    private string _tempIp = "127.0.0.1";
+    private int _tempPort = 8888;
 
     private static readonly Regex VrChatClientRegex = new(@"VRChat-Client-[A-Za-z0-9]{6}$", RegexOptions.Compiled);
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return Task.CompletedTask;
-        var ipString = localSettingsService.ReadSetting<string>("OSCAddress");
-        var hostIp = IPAddress.Parse(ipString);
 
         var tcpPort = Extensions.GetAvailableTcpPort();
         var udpPort = Extensions.GetAvailableUdpPort();
 
         _serviceWrapper = new OSCQueryServiceBuilder()
             .WithDiscovery(new MeaModDiscovery())
-            .WithHostIP(hostIp)
+            .WithHostIP(IPAddress.Loopback)
             .WithTcpPort(tcpPort)
             .WithUdpPort(udpPort)
             .WithServiceName(
@@ -51,6 +53,14 @@ public class OscQueryService(
         _serviceWrapper.OnOscQueryServiceAdded += AddProfileToList;
 
         StartAutoRefreshServices(5000);
+
+        oscRecvService.OnMessageReceived += (OscMessage message) =>
+        {
+            if (message.Address == "/avatar/change")
+            {
+                vrChatService.PullParametersFromOSCAddress(_tempIp, _tempPort);
+            }
+        };
 
         return Task.CompletedTask;
     }
@@ -99,25 +109,13 @@ public class OscQueryService(
         try
         {
             var vrcProfile = _profiles.First(profile => VrChatClientRegex.IsMatch(profile.name));
-
-            var hostIp = localSettingsService.ReadSetting<string>("OSCAddress");
             var vrcIp = vrcProfile.address.ToString();
-            if (hostIp != vrcIp)
-            {
-                localSettingsService.SaveSetting("OSCAddress", vrcIp);
-            }
+            if (_tempIp == vrcIp) return;
 
-            var hostPort = localSettingsService.ReadSetting<int>("OSCOutPort");
-            var vrcPort = vrcProfile.port;
-            if (hostPort != vrcPort)
-            {
-                localSettingsService.SaveSetting("OSCOutPort", vrcPort);
-            }
+            _tempIp = vrcIp;
+            _tempPort = vrcProfile.port;
+            vrChatService.PullParametersFromOSCAddress(_tempIp, _tempPort);
 
-            if (hostIp != vrcIp || hostPort != vrcPort)
-            {
-                vrChatService.PullParametersFromOSCAddress(vrcIp, vrcPort);
-            }
         }
         catch (InvalidOperationException)
         {
@@ -131,18 +129,9 @@ public class OscQueryService(
 
     public override void Dispose()
     {
-        if (localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking"))
-        {
-            // If we used VRCFaceTracking's OSCQuery navigation,
-            // Make sure to reset the original values
-            localSettingsService.SaveSetting("OSCAddress", "127.0.0.1");
-            localSettingsService.SaveSetting("OSCOutPort", 8888);
-        }
+        if (_serviceWrapper == null) return;
 
-        if (_serviceWrapper != null)
-        {
-            _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
-            _serviceWrapper.Dispose();
-        }
+        _serviceWrapper.OnOscQueryServiceAdded -= AddProfileToList;
+        _serviceWrapper.Dispose();
     }
 }
