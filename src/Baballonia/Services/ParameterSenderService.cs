@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Baballonia.Contracts;
 using Baballonia.Helpers;
+using Baballonia.Services.Calibration;
 using Baballonia.Services.Inference;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -146,9 +147,7 @@ public class ParameterSenderService : BackgroundService
             var eyeElement = EyeExpressionMap.ElementAt(i);
             var settings = _calibrationService.GetExpressionSettings(eyeElement.Key);
 
-            var msg = new OscMessage(_prefix + eyeElement.Value,
-                weight.Remap(settings.Lower, settings.Upper, settings.Min, settings.Max));
-            _sendQueue.Enqueue(msg);
+            SendExpressionWithPropperPrefix(eyeElement, weight, settings);
         }
 
         if (!_sendNativeVrcEyeTracking) return;
@@ -181,6 +180,11 @@ public class ParameterSenderService : BackgroundService
         _sendQueue.Enqueue(new OscMessage("/tracking/eye/LeftRightPitchYaw", leftEyeY, rightEyeX, rightEyeY, leftEyeX));
     }
 
+    public void SetNativeVrchatConvertedDict(Dictionary<string, string[]> map)
+    {
+        expressionMap = map;
+    }
+    Dictionary<string, string[]>? expressionMap = [];
     private void ProcessFaceExpressionData(float[] expressions)
     {
         if (expressions == null) return;
@@ -192,12 +196,33 @@ public class ParameterSenderService : BackgroundService
             var faceElement = FaceExpressionMap.ElementAt(i);
             var settings = _calibrationService.GetExpressionSettings(faceElement.Key);
 
+            SendExpressionWithPropperPrefix(faceElement, weight, settings);
+        }
+    }
+
+    private void SendExpressionWithPropperPrefix(KeyValuePair<string, string> faceElement, float weight, CalibrationParameter settings)
+    {
+        if (expressionMap == null || expressionMap.Count == 0)
+        {
             var msg = new OscMessage(_prefix + faceElement.Value,
                 Math.Clamp(
                     weight.Remap(settings.Lower, settings.Upper, settings.Min, settings.Max),
                     settings.Min,
                     settings.Max));
             _sendQueue.Enqueue(msg);
+            return;
+        }
+        if (expressionMap.TryGetValue(faceElement.Key, out var fullLink))
+        {
+            foreach (var s in fullLink)
+            {
+                var msg = new OscMessage(s,
+                    Math.Clamp(
+                        weight.Remap(settings.Lower, settings.Upper, settings.Min, settings.Max),
+                        settings.Min,
+                        settings.Max));
+                _sendQueue.Enqueue(msg);
+            }
         }
     }
 

@@ -40,10 +40,12 @@ public class VRCFaceTrackingService : BackgroundService
     private List<ICustomFaceExpression> _customFaceExpressions = new();
     private Contracts.ILocalSettingsService  _localSettingsService;
     private static readonly HttpClient Client = new();
+    private readonly ParameterSenderService _parameterSenderService;
 
-    public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService)
+    public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService, ParameterSenderService parameterSenderService)
     {
         _localSettingsService = localSettingsService;
+        _parameterSenderService = parameterSenderService;
         if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return;
         ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
         {
@@ -66,6 +68,22 @@ public class VRCFaceTrackingService : BackgroundService
     {
         _customFaceExpressions.RemoveAll(x => x.GetType() == VRCFTParameters.ParameterType);
         _customFaceExpressions.AddRange(VRCFTParameters.UpdateParameters(parameters));
+
+        Dictionary<string, List<string>> expressionMap = [];
+        foreach (var customFaceExpression in _customFaceExpressions)
+        {
+            string lastPart = customFaceExpression.Name.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+            List<string>? existing;
+            if (expressionMap.TryGetValue(lastPart, out existing))
+                existing.Add(customFaceExpression.Name);
+            else
+                expressionMap.Add(lastPart, new List<string>(){customFaceExpression.Name});
+        }
+
+        Dictionary<string, string[]> expressionArrayMap = [];
+        foreach (var expression in expressionMap)
+            expressionArrayMap.Add(expression.Key, expression.Value.ToArray());
+        _parameterSenderService.SetNativeVrchatConvertedDict(expressionArrayMap);
     }
 
     internal async void PullParametersFromOSCAddress(string ip, int port)
