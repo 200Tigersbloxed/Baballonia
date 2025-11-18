@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using VRCFaceTracking.Core.Contracts;
 
@@ -56,8 +57,11 @@ public class OscAvatarContents : IParameterDefinition
      */
     public object?[]? VALUE { get; set; }
 
-    [JsonIgnore] public string Address => FULL_PATH ?? String.Empty;
-    [JsonIgnore] public string Name => FULL_PATH?.Replace("/avatar/parameters/", String.Empty) ?? String.Empty;
+    [JsonIgnore] public string Address => FULL_PATH?.Replace("/avatar/parameters/", String.Empty) ?? String.Empty;
+
+    [JsonIgnore]
+    public string Name =>
+        FULL_PATH?.Replace("/avatar/parameters/", String.Empty).TrimEnd('/').Split('/').LastOrDefault() ?? String.Empty;
 
     [JsonIgnore]
     public Type Type
