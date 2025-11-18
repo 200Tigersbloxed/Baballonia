@@ -70,6 +70,7 @@ public partial class VrcViewModel : ViewModelBase
         }
 
         _ = LoadAsync();
+        LocalSettingsService.Load(this);
         PropertyChanged += (_, _) => { LocalSettingsService.Save(this); };
     }
 
