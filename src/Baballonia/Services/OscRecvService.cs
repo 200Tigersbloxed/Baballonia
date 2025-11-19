@@ -50,7 +50,7 @@ public class OscRecvService : BackgroundService
                 return;
             }
 
-            if (_oscTarget.DestinationAddress is not null)
+            if (!string.IsNullOrEmpty(_oscTarget.DestinationAddress))
             {
                 UpdateTarget(new IPEndPoint(IPAddress.Parse(_oscTarget.DestinationAddress), _oscTarget.InPort));
             }
