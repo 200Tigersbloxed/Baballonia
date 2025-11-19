@@ -41,6 +41,7 @@ public class VRCFaceTrackingService : BackgroundService
     private Contracts.ILocalSettingsService  _localSettingsService;
     private static readonly HttpClient Client = new();
     private readonly ParameterSenderService _parameterSenderService;
+    private string _lastAvatarId;
 
     public VRCFaceTrackingService(Contracts.ILocalSettingsService localSettingsService, Contracts.IDispatcherService dispatcherService, ParameterSenderService parameterSenderService)
     {
@@ -91,7 +92,11 @@ public class VRCFaceTrackingService : BackgroundService
         string url = $"http://{ip}:{port}/";
         string jsonContent = await Client.GetStringAsync(url);
         OscAvatarParameters? root = JsonConvert.DeserializeObject<OscAvatarParameters>(jsonContent);
-        if(root == null) return;
+        if (root == null) return;
+        var avatarId = root.GetAvatarID();
+        if (string.IsNullOrEmpty(avatarId)) return; // Can be empty during a swap
+        if (avatarId == _lastAvatarId) return;
+        _lastAvatarId = avatarId;
         OnNewAvatarLoaded(root.GetParameters().Select(x => (IParameterDefinition) x).ToArray());
     }
 

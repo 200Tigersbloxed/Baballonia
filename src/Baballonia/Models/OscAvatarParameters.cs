@@ -11,6 +11,16 @@ public class OscAvatarParameters
     public string DESCRIPTION { get; set; }
     public string FULL_PATH { get; set; }
     public int ACCESS { get; set; }
+
+    public string GetAvatarID()
+    {
+        bool noAvatarID = !CONTENTS.ContainsKey("avatar") || CONTENTS["avatar"].CONTENTS == null ||
+                                  !CONTENTS["avatar"].CONTENTS!.ContainsKey("change") ||
+                                  CONTENTS["avatar"].CONTENTS!["change"] == null;
+        if (noAvatarID) return string.Empty;
+        return CONTENTS["avatar"].CONTENTS!["change"].VALUE[0].ToString();
+    }
+
     public Dictionary<string, OscAvatarContents> CONTENTS { get; set; }
 
     public OscAvatarContents[] GetParameters()

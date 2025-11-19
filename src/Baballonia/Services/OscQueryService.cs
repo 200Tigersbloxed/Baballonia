@@ -22,7 +22,6 @@ namespace Baballonia.Services;
 /// <param name="vrChatService"></param>
 public class OscQueryService(
     ILogger<OscQueryService> logger,
-    OscRecvService oscRecvService,
     ILocalSettingsService localSettingsService,
     VRCFaceTrackingService vrChatService
     )
@@ -30,20 +29,13 @@ public class OscQueryService(
 {
     private readonly HashSet<OSCQueryServiceProfile> _profiles = [];
     private OSCQueryService _serviceWrapper = null!;
-    private string _prevIp = IPAddress.Loopback.ToString();
-    private int _prevInPort = 8889;
-    private int _prevOutPort = 8888;
-    private string _tempOSCQueryIp = IPAddress.Loopback.ToString();
-    private int _tempOSCQueryPort = 0;
+    private OSCQueryServiceProfile _vrchatProfile;
 
     private static readonly Regex VrChatClientRegex = new(@"VRChat-Client-[A-Za-z0-9]{6}$", RegexOptions.Compiled);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         if (!localSettingsService.ReadSetting<bool>("VRC_UseVRCFaceTracking")) return Task.CompletedTask;
-        _prevIp = localSettingsService.ReadSetting<string>("OSCAddress");
-        _prevInPort = localSettingsService.ReadSetting<int>("OSCOutPort");
-        _prevInPort = localSettingsService.ReadSetting<int>("OSCInPort");
         localSettingsService.SaveSetting("OSCOutPort", 9000);
         localSettingsService.SaveSetting("OSCInPort", 9001);
 
@@ -67,14 +59,6 @@ public class OscQueryService(
 
         _serviceWrapper.AddEndpoint<string>("/avatar/change", Attributes.AccessValues.ReadWrite, ["default"]);
         _serviceWrapper.OnOscQueryServiceAdded += AddProfileToList;
-
-        oscRecvService.OnMessageReceived += message =>
-        {
-            if (message.Address == "/avatar/change" && _tempOSCQueryPort > 0)
-            {
-                vrChatService.PullParametersFromOSCAddress(_tempOSCQueryIp, _tempOSCQueryPort);
-            }
-        };
 
         StartAutoRefreshServices(5000);
 
@@ -107,7 +91,13 @@ public class OscQueryService(
                 try
                 {
                     _serviceWrapper.RefreshServices();
-                    ScanForVRChatClients();
+                    // /avatar/change doesn't really work on Android, so
+                    // we'll just poll every 5000ms
+                    if (ScanForVRChatClients())
+                    {
+                        vrChatService.PullParametersFromOSCAddress(
+                            _vrchatProfile.address.ToString(), _vrchatProfile.port);
+                    }
                 }
                 catch (Exception)
                 {
@@ -120,20 +110,15 @@ public class OscQueryService(
 
     private bool ScanForVRChatClients()
     {
-        if (_profiles.Count == 0) return true;
+        // No clients count
+        if (_vrchatProfile != null) return true;
+        if (_profiles.Count == 0) return false;
 
         try
         {
-            // Only set the VRC once
-            var vrcProfile = _profiles.First(profile => VrChatClientRegex.IsMatch(profile.name));
-            var vrcIp = vrcProfile.address.ToString();
-            if (_tempOSCQueryIp == vrcIp) return true;
-
-            _tempOSCQueryIp = vrcProfile.address.ToString();
-            _tempOSCQueryPort = vrcProfile.port;
-            vrChatService.PullParametersFromOSCAddress(_tempOSCQueryIp, _tempOSCQueryPort);
-            int vrcRecvPort = localSettingsService.ReadSetting<int>("OSCInPort"); // 9001~
-            oscRecvService.UpdateTarget(new IPEndPoint(IPAddress.Any, vrcRecvPort));
+            // Only set the VRC profile once
+            _vrchatProfile = _profiles.First(profile => VrChatClientRegex.IsMatch(profile.name));
+            return true;
         }
         catch (InvalidOperationException)
         {
@@ -149,9 +134,9 @@ public class OscQueryService(
 
     public override void Dispose()
     {
-        localSettingsService.SaveSetting("OSCAddress", _prevIp);
-        localSettingsService.SaveSetting("OSCInPort", _prevInPort);
-        localSettingsService.SaveSetting("OSCOutPort", _prevOutPort);
+        localSettingsService.SaveSetting("OSCAddress", "127.0.0.1");
+        localSettingsService.SaveSetting("OSCInPort", 8888);
+        localSettingsService.SaveSetting("OSCOutPort", 8889);
 
         if (_serviceWrapper == null) return;
 
